@@ -1,0 +1,51 @@
+MODULE main
+VAR
+	p : boolean;
+	q : boolean;
+	state : {e0,e1,e2,e3,e4,e5,e6,e7,e8};
+
+ASSIGN
+	init(state) := e0;
+	next(state) := case
+		          state = e0 : e2;
+		       	  state = e1 : {e2,e4};
+		       	  state = e2 : {e3};
+		       	  state = e3 : {e0, e1, e3, e5};
+		       	  state = e4 : {e3, e5, e6};
+		       	  state = e5 : {e3};
+		       	  state = e6 : {e7};
+		       	  state = e7 : {e8};
+		       	  state = e8 : {e8};
+		       esac;
+		       
+	init(p) := FALSE;
+	next(p) := case
+			    state = e0 : FALSE;
+		       	state = e1 : TRUE;
+		       	state = e2 : FALSE;
+		       	state = e3 : TRUE;
+		       	state = e4 : TRUE;
+		       	state = e5 : FALSE;
+		       	state = e6 : TRUE;
+		       	state = e7 : TRUE;
+		       	state = e8 : FALSE;
+		   esac;
+
+	init(q) := FALSE;
+	next(q) := case
+			    state = e0 : FALSE;
+		       	state = e1 : FALSE;
+		       	state = e2 : TRUE;
+		       	state = e3 : FALSE;
+		       	state = e4 : TRUE;
+		       	state = e5 : TRUE;
+		       	state = e6 : FALSE;
+		       	state = e7 : FALSE;
+		       	state = e8 : TRUE;
+		   esac;
+
+SPEC AG(state = e1 -> (p & ! q))
+SPEC AG(state = e1 -> EX p)
+SPEC AG(state = e6 -> E [p U q])
+SPEC AG((state = e0 -> !E[p U q]) | (state != e0 -> E[p U q]))
+SPEC (p & EX p) -> (state = e1 | state = e3 | state = e4 | state = e6)

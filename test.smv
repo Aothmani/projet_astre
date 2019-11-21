@@ -1,0 +1,49 @@
+MODULE main
+VAR
+	p : boolean;
+	q : boolean;
+    c : boolean;
+	state : {e0,e1,e2,e3,e4};
+
+ASSIGN
+	init(state) := e0;
+	next(state) := case
+		          state = e0 : e1;
+		       	  state = e1 : e2;
+		       	  state = e2 : e3;
+		       	  state = e3 : e4;
+		       	  state = e4 : e4;
+
+		       esac;
+		       
+	init(p) := TRUE;
+	next(p) := case
+			    state = e0 : TRUE;
+		       	state = e1 : FALSE;
+		       	state = e2 : TRUE;
+		       	state = e3 : FALSE;
+		       	state = e4 : FALSE;
+
+		   esac;
+
+	init(q) := FALSE;
+	next(q) := case
+			    state = e0 : FALSE;
+		       	state = e1 : TRUE;
+		       	state = e2 : FALSE;
+		       	state = e3 : TRUE;
+		       	state = e4 : FALSE;
+
+		   esac;
+
+    init(c) := FALSE;
+	next(c) := case
+			    state = e0 : FALSE;
+		       	state = e1 : FALSE;
+		       	state = e2 : FALSE;
+		       	state = e3 : FALSE;
+		       	state = e4 : TRUE;
+
+		   esac;
+
+SPEC AG(E[E[p U q] U c])
