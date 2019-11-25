@@ -20,28 +20,28 @@ ASSIGN
 		       
 	init(p) := FALSE;
 	next(p) := case
-			    state = e0 : FALSE;
-		       	state = e1 : TRUE;
-		       	state = e2 : FALSE;
-		       	state = e3 : TRUE;
-		       	state = e4 : TRUE;
-		       	state = e5 : FALSE;
-		       	state = e6 : TRUE;
-		       	state = e7 : TRUE;
-		       	state = e8 : FALSE;
+			next(state) = e0 : FALSE;
+		       	next(state) = e1 : TRUE;
+		       	next(state) = e2 : FALSE;
+		       	next(state) = e3 : TRUE;
+		       	next(state) = e4 : TRUE;
+		       	next(state) = e5 : FALSE;
+		       	next(state) = e6 : TRUE;
+		       	next(state) = e7 : TRUE;
+		       	next(state) = e8 : FALSE;
 		   esac;
 
 	init(q) := FALSE;
 	next(q) := case
-			    state = e0 : FALSE;
-		       	state = e1 : FALSE;
-		       	state = e2 : TRUE;
-		       	state = e3 : FALSE;
-		       	state = e4 : TRUE;
-		       	state = e5 : TRUE;
-		       	state = e6 : FALSE;
-		       	state = e7 : FALSE;
-		       	state = e8 : TRUE;
+			next(state) = e0 : FALSE;
+		       	next(state) = e1 : FALSE;
+		       	next(state) = e2 : TRUE;
+		       	next(state) = e3 : FALSE;
+		       	next(state) = e4 : TRUE;
+		       	next(state) = e5 : TRUE;
+		       	next(state) = e6 : FALSE;
+		       	next(state) = e7 : FALSE;
+		       	next(state) = e8 : TRUE;
 		   esac;
 
 SPEC AG(state = e1 -> (p & ! q))
