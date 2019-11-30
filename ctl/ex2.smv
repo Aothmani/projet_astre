@@ -1,0 +1,56 @@
+MODULE main
+VAR
+    
+    demP : boolean;
+    demQ : boolean;
+    proc1 : process user(P,demP,demQ);
+    proc2 : process user(Q,demP,demQ);
+    proc : {P, Q};
+
+ASSIGN
+    init(demP) := FALSE;    
+    init(demQ) := FALSE;    
+
+    SPEC AG ! (proc1.state = critical & proc2.state = critical)
+
+    SPEC AG (proc1.state = waiting -> AF proc1.state = critical)
+
+    SPEC AG (proc1.state = waiting -> EF proc1.state = critical)
+
+    --SPEC AG (!proc2.state = waiting U proc1.state = waiting -> AF proc1.state = critical)
+
+MODULE user(proc, demP, demQ) 
+VAR   
+    state : {entering, waiting, critical, exiting};
+
+    ASSIGN
+	init(state) := entering;
+	next(state) := 
+                case
+    			state = entering : waiting;
+	    	       	state = waiting & demQ = TRUE & proc = P : waiting;
+			state = waiting & demQ = FALSE & proc = P : critical;
+			state = waiting & demP  = TRUE & proc = Q : waiting;
+			state = waiting & demP = FALSE & proc = Q : critical;
+			state = critical : {critical, exiting};
+		        state = exiting : {entering};
+			TRUE : state;
+                esac;
+
+	next(demP) := 
+                case
+    			state = entering & proc = P : TRUE;
+    		       	state = exiting & proc = P : FALSE;
+			TRUE : demP;
+                esac;
+
+ 	next(demQ) := 
+                case
+    			state = entering & proc = Q : TRUE;
+    		       	state = exiting & proc = Q : FALSE;
+			TRUE : demQ;
+		esac;
+
+
+	FAIRNESS
+        running

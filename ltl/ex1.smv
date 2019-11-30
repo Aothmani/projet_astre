@@ -1,0 +1,52 @@
+MODULE main
+VAR
+	a : boolean;
+	b : boolean;
+    c : boolean;
+	state : {s1,s2,s3,s4,s5};
+ 
+ASSIGN
+	init(state) := s1;
+	next(state) := case
+		       	  state = s1 : {s3,s4};
+		       	  state = s2 : {s4};
+		       	  state = s3 : {s4};
+		       	  state = s4 : {s2, s3, s5};
+		       	  state = s5 : {s4,s5};
+		       esac;
+		       
+	init(a) := TRUE;
+	next(a) := case
+		       	next(state) = s1 : TRUE;
+		       	next(state) = s2 : FALSE;
+		       	next(state) = s3 : FALSE;
+		       	next(state) = s4 : FALSE;
+		       	next(state) = s5 : TRUE;
+		   esac;
+
+	init(b) := FALSE;
+	next(b) := case
+		       	next(state) = s1 : FALSE;
+		       	next(state) = s2 : FALSE;
+		       	next(state) = s3 : TRUE;
+		       	next(state) = s4 : TRUE;
+		       	next(state) = s5 : TRUE;
+		   esac;
+
+    init(c) := FALSE;
+	next(c) := case
+		       	next(state) = s1 : FALSE;
+		       	next(state) = s2 : TRUE;
+		       	next(state) = s3 : TRUE;
+		       	next(state) = s4 : FALSE;
+		       	next(state) = s5 : TRUE;
+		   esac;
+
+LTLSPEC F G c
+LTLSPEC G F c
+LTLSPEC X ! c -> X X c
+LTLSPEC G a
+LTLSPEC a U G b | c
+LTLSPEC (X X b) U (b | c)
+
+
