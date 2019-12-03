@@ -1,0 +1,70 @@
+MODULE main
+VAR
+     s : {0,1};
+    y0 : {0,1};
+    y1 : {0,1};
+	proc1 : process proc(s, y0, y1, 0);
+    proc2 : process proc(s, y0, y1, 1);
+ 
+ASSIGN
+    init(s) := 0;
+    init(y0) := 0;
+    init(y1) := 0;
+    SPEC AG ! (proc1.state = critical & proc2.state = critical)
+
+    SPEC AG (proc1.state = wait -> AF proc1.state = critical) | AG (proc2.state = wait -> AF proc2.state = critical)
+
+    SPEC EG (proc1.state = wait -> EF proc1.state = critical) | EG (proc2.state = wait -> EF proc2.state = critical)
+    
+    SPEC AG ( ((A [ ! (proc2.state = wait) U proc1.state = wait ]) ->  (A [ ! (proc2.state = critical) U proc1.state = critical])) |((A [ ! (proc1.state = wait) U proc2.state = wait ]) ->  (A [ ! (proc1.state = critical) U proc2.state = critical])))
+MODULE proc(s, y0, y1, i)
+VAR
+    state : {idle, wait, critical};
+    
+ASSIGN
+
+    init(state) := idle;
+    next(state) :=
+                case
+                    state = idle                       : {wait};
+                    (state = wait & i = 0) & (y1 = 0 | s != 0)  : {critical};
+                    (state = wait & i = 1) & (y0 = 0 | s != 1)   : {critical};
+                    state = critical                   : {idle};
+                    TRUE                               : state;
+                esac;
+  
+    next(y0) :=
+                case
+                    next(state) = idle & i = 0     : 0;
+                    next(state) = wait & i = 0     : 1;
+                    next(state) = critical & i = 0 : 1;
+                    TRUE                     : y0;
+                esac;
+
+    next(y1) :=
+                case
+                    next(state) = idle & i = 1     : 0;
+                    next(state) = wait & i = 1     : 1;
+                    next(state) = critical & i = 1 : 1;
+                    TRUE                     : y1;
+                esac;
+
+
+                    
+    next(s) :=
+                case
+                    next(state) = wait : i;
+                    TRUE : s;
+                esac;
+FAIRNESS
+    running
+
+
+--LTLSPEC F G c
+--LTLSPEC G F c
+--LTLSPEC X ! c -> X X c
+--LTLSPEC G a
+--LTLSPEC a U G b | c
+--LTLSPEC (X X b) U (b | c)
+
+

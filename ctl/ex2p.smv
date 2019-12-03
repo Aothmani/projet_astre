@@ -17,7 +17,7 @@ ASSIGN
 
     SPEC EG (proc1.state = waiting -> EF proc1.state = critical) | EG (proc2.state = waiting -> EF proc2.state = critical)
 
-    SPEC AG (A [ ! (proc2.state = waiting) U proc1.state = waiting ] -> AG ( AG ! (proc2.state = critical) | AG (A [ ! (proc2.state = critical) U proc1.state = critical ]))
+
 
 MODULE user(proc, demP, demQ) 
 VAR   
