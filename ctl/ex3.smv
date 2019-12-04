@@ -1,23 +1,22 @@
 MODULE main
 VAR
-     s : {0,1};
-    y0 : {0,1};
-    y1 : {0,1};
-	proc1 : process proc(s, y0, y1, 0);
-    proc2 : process proc(s, y0, y1, 1);
- 
+    enable_small : boolean;
+    enable_hwy : boolean;
+    restart : boolean;
+
+    capteur : process capteur();
+    timer   : process timer(restart);
+    primary_controller : process primary_controller(timer.state, capteur.state, enable_small, enable_hwy);
+    primary_controller : process primary_controller(timer.state, capteur.state, enable_small, enable_hwy);
+
 ASSIGN
-    init(s) := 0;
-    init(y0) := 0;
-    init(y1) := 0;
-    SPEC AG ! (proc1.state = critical & proc2.state = critical)
+     init(enable_small) := FALSE;
+     init(enable_hwy)   := FALSE;
+     init(restart)      := FALSE; 
 
-    SPEC AG (proc1.state = wait -> AF proc1.state = critical) | AG (proc2.state = wait -> AF proc2.state = critical)
-
-    SPEC EG (proc1.state = wait -> EF proc1.state = critical) | EG (proc2.state = wait -> EF proc2.state = critical)
     
-    SPEC AG ( ((A [ ! (proc2.state = wait) U proc1.state = wait ]) ->  (A [ ! (proc2.state = critical) U proc1.state = critical])) |((A [ ! (proc1.state = wait) U proc2.state = wait ]) ->  (A [ ! (proc1.state = critical) U proc2.state = critical])))
 
+--#################################################################
 MODULE capteur()
 VAR
     state : {C_A, C_P};
@@ -28,20 +27,17 @@ ASSIGN
     next(state) :=
                 case
                     state = C_A : {C_A, C_P};
-                    state = C_A : {C_A, C_P};
+                    state = C_P : {C_A, C_P};
                 esac;
 --#################################################################
-MODULE temporisation()
+MODULE timer(restart)
 VAR
-    restart : boolean;
     state : {START, SHORT, LONG};
     
 ASSIGN
-    init(restart) := TRUE;
     next(restart) := 
                   case
-                      next(state) = START : TRUE;
-                      TRUE                : restart;       
+                      TRUE                : FALSE;       
                   esac;
 
 
@@ -56,21 +52,34 @@ ASSIGN
                 esac;
     
 --#################################################################
-MODULE secondary_controller()
+MODULE secondary_controller(timer_state, sensor_state, enable_small, enable_hwy)
 VAR
-    sensor_state : {C_A, C_P};
-    timer_state : {START, SHORT, LONG}
+   
     state : {GREEN, YELLOW, RED};
-    enable_small : boolean;
     
 ASSIGN
-    init(enable_small) := FALSE;
-    next(enable_small) := 
+
+    next(enable_hwy) := 
                   case
-                      next(state) = START : TRUE;
-                      TRUE                : restart;       
+                      state = YELLOW & next(state) = RED   : TRUE;
+                      TRUE                : FALSE;       
                   esac;
 
+    next(enable_small) := 
+                  case               
+                      TRUE                : enable_small;       
+                  esac;
+
+    next(timer_state) := 
+                  case
+                      TRUE                : timer_state;       
+                  esac;
+
+    next(restart) := 
+                  case
+                      (state = RED & next(state) = GREEN) | (state = GREEN & next(state) = YELLOW)  : TRUE;
+                      TRUE                : FALSE;       
+                  esac;
 
     init(state) := RED;
     next(state) :=
@@ -78,35 +87,39 @@ ASSIGN
                     state = RED & enable_small = FALSE : {RED};
                     state = RED & enable_small = TRUE : {GREEN};
 
-                    state = GREEN & (sensor_state = C_A | timer_state = LONG) : {GREEN};
-                    state = GREEN & (sensor_state = C_A | timer_state = LONG) : {YELLOW}; --CHELOU, A VERIFIER
+                    state = GREEN & !(sensor_state = C_A | timer_state = LONG) : {GREEN};
+                    state = GREEN & (sensor_state = C_A | timer_state = LONG) : {YELLOW}; 
 
                     state = YELLOW & timer_state != SHORT: {YELLOW};
                     state = YELLOW & timer_state = SHORT: {RED};
                     
                 esac;
 --#################################################################
-MODULE primary_controller()
+MODULE primary_controller(timer_state, sensor_state, enable_small, enable_hwy)
 VAR
-    sensor_state : {C_A, C_P};
-    timer_state : {START, SHORT, LONG}
     state : {GREEN, YELLOW, RED};
-    enable_hwy : boolean;
     
 ASSIGN
-    init(enable_hwy) := FALSE;
     next(enable_hwy) := 
                   case
-                      next(state) = GREEN : TRUE;
-                      next(state) = RED   : FALSE;
                       TRUE                : enable_hwy;       
                   esac;
 
-    init(sensor_state) := ;--JE MET QUOI?????
-    next(sensor_state) := 
+    next(enable_small) := 
+                  case 
+                      state = YELLOW & next(state) = RED   : TRUE;
+                      TRUE                : enable_small;       
+                  esac;
+
+    next(timer_state) := 
                   case
-                      next(state) = GREEN : C_P;
-                      TRUE                : enable_hwy;       
+                      TRUE                : timer_state;       
+                  esac;
+
+    next(restart) := 
+                  case
+                      (state = RED & next(state) = GREEN) | (state = GREEN & next(state) = YELLOW)  : TRUE;
+                      TRUE                : FALSE;       
                   esac;
 
     init(state) := RED;
@@ -115,8 +128,8 @@ ASSIGN
                     state = RED & enable_hwy = FALSE : {RED};
                     state = RED & enable_hwy = TRUE : {GREEN};
 
-                    state = GREEN & (sensor_state = C_P & timer_state = LONG) : {GREEN};
-                    state = GREEN & (sensor_state = C_P & timer_state = LONG) : {YELLOW}; --CHELOU, A VERIFIER
+                    state = GREEN & !(sensor_state = C_P & timer_state = LONG) : {GREEN};
+                    state = GREEN & (sensor_state = C_P & timer_state = LONG) : {YELLOW}; 
 
                     state = YELLOW & timer_state != SHORT: {YELLOW};
                     state = YELLOW & timer_state = SHORT: {RED};
