@@ -16,7 +16,7 @@ ASSIGN
 
     SPEC EG (proc1.state = wait -> EF proc1.state = critical) | EG (proc2.state = wait -> EF proc2.state = critical)
     
-    SPEC AG ( ((A [ ! (proc2.state = wait) U proc1.state = wait ]) ->  (A [ ! (proc2.state = critical) U proc1.state = critical])) |((A [ ! (proc1.state = wait) U proc2.state = wait ]) ->  (A [ ! (proc1.state = critical) U proc2.state = critical])))
+    SPEC AG ( ((A [ ! (proc2.state = wait) U proc1.state = wait ]) ->  (A [ ! (proc2.state = critical) U proc1.state = critical])) | ((A [ ! (proc1.state = wait) U proc2.state = wait ]) ->  (A [ ! (proc1.state = critical) U proc2.state = critical])))
 MODULE proc(s, y0, y1, i)
 VAR
     state : {idle, wait, critical};
