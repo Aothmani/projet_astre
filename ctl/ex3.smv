@@ -6,8 +6,8 @@ VAR
 
     capteur : process capteur();
     timer   : process timer(restart);
-    primary_controller : process primary_controller(timer.state, capteur.state, enable_small, enable_hwy);
-    primary_controller : process primary_controller(timer.state, capteur.state, enable_small, enable_hwy);
+    primary_controller : process primary_controller(timer.state, capteur.state, enable_small, enable_hwy, restart);
+    secondary_controller : process secondary_controller(timer.state, capteur.state, enable_small, enable_hwy, restart);
 
 ASSIGN
      init(enable_small) := FALSE;
@@ -52,7 +52,7 @@ ASSIGN
                 esac;
     
 --#################################################################
-MODULE secondary_controller(timer_state, sensor_state, enable_small, enable_hwy)
+MODULE secondary_controller(timer_state, sensor_state, enable_small, enable_hwy, restart)
 VAR
    
     state : {GREEN, YELLOW, RED};
@@ -90,12 +90,12 @@ ASSIGN
                     state = GREEN & !(sensor_state = C_A | timer_state = LONG) : {GREEN};
                     state = GREEN & (sensor_state = C_A | timer_state = LONG) : {YELLOW}; 
 
-                    state = YELLOW & timer_state != SHORT: {YELLOW};
-                    state = YELLOW & timer_state = SHORT: {RED};
+                    state = YELLOW & ! (timer_state = SHORT) : {YELLOW};
+                    state = YELLOW & timer_state = SHORT : {RED};
                     
                 esac;
 --#################################################################
-MODULE primary_controller(timer_state, sensor_state, enable_small, enable_hwy)
+MODULE primary_controller(timer_state, sensor_state, enable_small, enable_hwy, restart)
 VAR
     state : {GREEN, YELLOW, RED};
     
@@ -122,7 +122,7 @@ ASSIGN
                       TRUE                : FALSE;       
                   esac;
 
-    init(state) := RED;
+    init(state) := GREEN;
     next(state) :=
                 case
                     state = RED & enable_hwy = FALSE : {RED};
@@ -131,7 +131,7 @@ ASSIGN
                     state = GREEN & !(sensor_state = C_P & timer_state = LONG) : {GREEN};
                     state = GREEN & (sensor_state = C_P & timer_state = LONG) : {YELLOW}; 
 
-                    state = YELLOW & timer_state != SHORT: {YELLOW};
+                    state = YELLOW & ! (timer_state = SHORT) : {YELLOW};
                     state = YELLOW & timer_state = SHORT: {RED};
                     
                 esac;
