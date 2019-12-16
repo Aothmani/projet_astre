@@ -1,25 +1,58 @@
 MODULE main
 VAR
-    enable_small : boolean;
-    enable_hwy : boolean;
-    restart : boolean;
+    enable_small : enable_small(primary_controller);
+    enable_hwy : enable_hwy(secondary_controller);
+    restart : restart(primary_controller, secondary_controller);
 
-    capteur : process capteur();
-    timer   : process timer(restart);
-    primary_controller : process primary_controller(timer.state, capteur.state, enable_small, enable_hwy, restart);
-    secondary_controller : process secondary_controller(timer.state, capteur.state, enable_small, enable_hwy, restart);
+    capteur : capteur();
+    timer   : timer(restart.state);
+    primary_controller : primary_controller(timer.state, capteur.state, enable_small.state, enable_hwy.state, restart.state);
+    secondary_controller : secondary_controller(timer.state, capteur.state, enable_small.state, enable_hwy.state, restart.state);
+
+    SPEC AG ( primary_controller.state = GREEN ->  secondary_controller.state = RED) & 
+         AG ( secondary_controller.state = GREEN -> primary_controller.state = RED)
+
+    SPEC AG (AF primary_controller.state = GREEN) & AG (AF secondary_controller.state = GREEN)
+
+--#################################################################
+MODULE restart(primary, secondary)
+VAR
+    state : boolean;
+ASSIGN
+    init(state) := FALSE;
+    next(state) :=
+                case
+                    (primary.state = RED & next(primary.state) = GREEN) | (primary.state = GREEN & next(primary.state) = YELLOW) 
+                    | (secondary.state = RED & next(secondary.state) = GREEN) | (secondary.state = GREEN & next(secondary.state) = YELLOW)  : TRUE;
+                    TRUE                : FALSE;       
+                  esac;
+
+--#################################################################
+MODULE enable_hwy(secondary)
+VAR
+    state : boolean;
 
 ASSIGN
-     init(enable_small) := FALSE;
-     init(enable_hwy)   := FALSE;
-     init(restart)      := FALSE; 
+    init(state) := FALSE;
+    next(state) := 
+                  case
+                      secondary.state = YELLOW & next(secondary.state) = RED   : TRUE;
+                      TRUE                : FALSE;       
+                  esac;
 
-    --SPEC AG ( primary_controller.state = GREEN -> ! (AG secondary_controller.state = GREEN)) | AG ( secondary_controller.state = GREEN -> ! (AG primary_controller.state = GREEN))
+--#################################################################
+MODULE enable_small(primary)
+VAR
+    state : boolean;
 
-    --SPEC AG (AF primary_controller.state = GREEN)
+ASSIGN
+    init(state) := FALSE;
+    next(state) := 
+                  case 
+                      primary.state = YELLOW & next(primary.state) = RED   : TRUE;
+                      TRUE                : FALSE;       
+                  esac;
 
-FAIRNESS
-  running
 
 
 --#################################################################
@@ -35,8 +68,8 @@ ASSIGN
                     state = C_A : {C_A, C_P};
                     state = C_P : {C_A, C_P};
                 esac;
-FAIRNESS
-  running
+
+FAIRNESS state = C_P;
   
 --#################################################################
 MODULE timer(restart)
@@ -44,12 +77,6 @@ VAR
     state : {START, SHORT, LONG};
     
 ASSIGN
-    next(restart) := 
-                  case
-                      TRUE                : FALSE;       
-                  esac;
-
-
     init(state) := START;
     next(state) :=
                 case
@@ -59,8 +86,8 @@ ASSIGN
                     state = LONG & restart = TRUE  : {START};
                     state = LONG : {LONG};
                 esac;
-FAIRNESS
-  running
+
+FAIRNESS state = LONG;
 
 --#################################################################
 MODULE secondary_controller(timer_state, sensor_state, enable_small, enable_hwy, restart)
@@ -69,29 +96,6 @@ VAR
     state : {GREEN, YELLOW, RED};
     
 ASSIGN
-
-    next(enable_hwy) := 
-                  case
-                      state = YELLOW & next(state) = RED   : TRUE;
-                      TRUE                : FALSE;       
-                  esac;
-
-    next(enable_small) := 
-                  case               
-                      TRUE                : enable_small;       
-                  esac;
-
-    next(timer_state) := 
-                  case
-                      TRUE                : timer_state;       
-                  esac;
-
-    next(restart) := 
-                  case
-                      (state = RED & next(state) = GREEN) | (state = GREEN & next(state) = YELLOW)  : TRUE;
-                      TRUE                : FALSE;       
-                  esac;
-
     init(state) := RED;
     next(state) :=
                 case
@@ -105,8 +109,7 @@ ASSIGN
                     state = YELLOW & next(timer_state) = SHORT : {RED};
                     
                 esac;
-FAIRNESS
-  running
+
   
 --#################################################################
 MODULE primary_controller(timer_state, sensor_state, enable_small, enable_hwy, restart)
@@ -114,28 +117,6 @@ VAR
     state : {GREEN, YELLOW, RED};
     
 ASSIGN
-    next(enable_hwy) := 
-                  case
-                      TRUE                : enable_hwy;       
-                  esac;
-
-    next(enable_small) := 
-                  case 
-                      state = YELLOW & next(state) = RED   : TRUE;
-                      TRUE                : FALSE;       
-                  esac;
-
-    next(timer_state) := 
-                  case
-                      TRUE                : timer_state;       
-                  esac;
-
-    next(restart) := 
-                  case
-                      (state = RED & next(state) = GREEN) | (state = GREEN & next(state) = YELLOW)  : TRUE;
-                      TRUE                : FALSE;       
-                  esac;
-
     init(state) := GREEN;
     next(state) :=
                 case
@@ -146,12 +127,11 @@ ASSIGN
                     state = GREEN & (sensor_state = C_P & timer_state = LONG) : {YELLOW}; 
 
                     state = YELLOW & timer_state = SHORT: {RED};
-		    TRUE : state;
+		            TRUE : state;
 
                 esac;
-FAIRNESS
-  running
-FAIRNESS state = GREEN
+
+
 
 
 
