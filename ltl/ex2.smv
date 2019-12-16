@@ -11,7 +11,7 @@ ASSIGN
     init(y0) := 0;
     init(y1) := 0;
 LTLSPEC G ! (p0.state = critical & p1.state = critical)
-LTLSPEC G (p0.state = wait -> F p0.state = critical) | (p1.state = wait -> F p1.state = critical)
+LTLSPEC G ((p0.state = wait -> F p0.state = critical) | (p1.state = wait -> F p1.state = critical))
 LTLSPEC G F p0.state = critical & G F p1.state = critical
 MODULE proc(s, y0, y1, i)
 VAR
