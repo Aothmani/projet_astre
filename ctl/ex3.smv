@@ -14,7 +14,13 @@ ASSIGN
      init(enable_hwy)   := FALSE;
      init(restart)      := FALSE; 
 
-    
+    --SPEC AG ( primary_controller.state = GREEN -> ! (AG secondary_controller.state = GREEN)) | AG ( secondary_controller.state = GREEN -> ! (AG primary_controller.state = GREEN))
+
+    --SPEC AG (AF primary_controller.state = GREEN)
+
+FAIRNESS
+  running
+
 
 --#################################################################
 MODULE capteur()
@@ -29,6 +35,9 @@ ASSIGN
                     state = C_A : {C_A, C_P};
                     state = C_P : {C_A, C_P};
                 esac;
+FAIRNESS
+  running
+  
 --#################################################################
 MODULE timer(restart)
 VAR
@@ -50,7 +59,9 @@ ASSIGN
                     state = LONG & restart = TRUE  : {START};
                     state = LONG : {LONG};
                 esac;
-    
+FAIRNESS
+  running
+
 --#################################################################
 MODULE secondary_controller(timer_state, sensor_state, enable_small, enable_hwy, restart)
 VAR
@@ -90,10 +101,13 @@ ASSIGN
                     state = GREEN & !(sensor_state = C_A | timer_state = LONG) : {GREEN};
                     state = GREEN & (sensor_state = C_A | timer_state = LONG) : {YELLOW}; 
 
-                    state = YELLOW & ! (timer_state = SHORT) : {YELLOW};
-                    state = YELLOW & timer_state = SHORT : {RED};
+                    state = YELLOW & ! (next(timer_state) = SHORT) : {YELLOW};
+                    state = YELLOW & next(timer_state) = SHORT : {RED};
                     
                 esac;
+FAIRNESS
+  running
+  
 --#################################################################
 MODULE primary_controller(timer_state, sensor_state, enable_small, enable_hwy, restart)
 VAR
@@ -108,7 +122,7 @@ ASSIGN
     next(enable_small) := 
                   case 
                       state = YELLOW & next(state) = RED   : TRUE;
-                      TRUE                : enable_small;       
+                      TRUE                : FALSE;       
                   esac;
 
     next(timer_state) := 
@@ -131,14 +145,13 @@ ASSIGN
                     state = GREEN & !(sensor_state = C_P & timer_state = LONG) : {GREEN};
                     state = GREEN & (sensor_state = C_P & timer_state = LONG) : {YELLOW}; 
 
-                    state = YELLOW & ! (timer_state = SHORT) : {YELLOW};
                     state = YELLOW & timer_state = SHORT: {RED};
-                    
+		    TRUE : state;
+
                 esac;
 FAIRNESS
-    running
-
-
+  running
+FAIRNESS state = GREEN
 
 
 
