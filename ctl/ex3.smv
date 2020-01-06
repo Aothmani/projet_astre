@@ -4,10 +4,12 @@ VAR
     enable_hwy : enable_hwy(secondary_controller);
     restart : restart(primary_controller, secondary_controller);
 
-    capteur : capteur();
+    capteur_secondary : capteur();
+    capteur_primary : capteur();
     timer   : timer(restart.state);
-    primary_controller : primary_controller(timer.state, capteur.state, enable_small.state, enable_hwy.state, restart.state);
-    secondary_controller : secondary_controller(timer.state, capteur.state, enable_small.state, enable_hwy.state, restart.state);
+    primary_controller : primary_controller(timer.state, capteur_secondary.state, enable_small.state, enable_hwy.state, restart.state);
+    secondary_controller : secondary_controller(timer.state, capteur_secondary.state, enable_small.state, enable_hwy.state, restart.state);
+    capteur_carrefour : capteur_carrefour(capteur_primary, capteur_secondary, primary_controller, secondary_controller);
 
     SPEC AG ( primary_controller.state = GREEN ->  secondary_controller.state = RED) & 
          AG ( secondary_controller.state = GREEN -> primary_controller.state = RED)
@@ -15,6 +17,7 @@ VAR
     SPEC AG (AF primary_controller.state = GREEN) & AG (AF secondary_controller.state = GREEN)
 
 --#################################################################
+
 MODULE restart(primary, secondary)
 VAR
     state : boolean;
@@ -25,6 +28,19 @@ ASSIGN
                     (primary.state = RED & next(primary.state) = GREEN) | (primary.state = GREEN & next(primary.state) = YELLOW) 
                     | (secondary.state = RED & next(secondary.state) = GREEN) | (secondary.state = GREEN & next(secondary.state) = YELLOW)  : TRUE;
                     TRUE                : FALSE;       
+                  esac;
+
+--#################################################################
+MODULE capteur_carrefour(capteur_primary, capteur_secondary, primary, secondary)
+VAR
+    state : {C_A, C_P};
+
+ASSIGN
+    init(state) := C_A;
+    next(state) := 
+                  case
+                      ( capteur_secondary.state = C_P & secondary.state = GREEN ) | ( capteur_primary.state = C_P & primary.state = GREEN ) : C_P;
+                      TRUE                : C_A;       
                   esac;
 
 --#################################################################
