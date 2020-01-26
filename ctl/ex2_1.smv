@@ -28,7 +28,7 @@ VAR
 			state = waiting & demQ = FALSE & proc = P : critical;
 			state = waiting & demP  = TRUE & proc = Q : waiting;
 			state = waiting & demP = FALSE & proc = Q : critical;
-			state = critical : {critical, exiting};
+			state = critical : {exiting};
 		        state = exiting : {entering};
 			TRUE : state;
                 esac;
