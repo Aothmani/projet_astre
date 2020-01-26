@@ -16,6 +16,11 @@ VAR
 
     SPEC AG (AF primary_controller.state = GREEN) & AG (AF secondary_controller.state = GREEN)
 
+    SPEC AG  (( E [(capteur_secondary.state = C_P) U secondary_controller.state = GREEN] )  ->  EF (capteur_carrefour.state = C_P) &  ( E [(capteur_primary.state = C_P) U primary_controller.state = GREEN] ) ->  EF (capteur_carrefour.state = C_P))
+
+    SPEC EG  (( E [(capteur_secondary.state = C_A & capteur_primary.state = C_A) U capteur_carrefour.state = C_A]))
+    
+    
 --#################################################################
 
 MODULE restart(primary, secondary)
